@@ -4,6 +4,7 @@ import FontFaceObserver from 'fontfaceobserver'
 import imagesLoaded from 'imagesloaded'
 import fragmentShader from './shaders/fragment.glsl'
 import vertexShader from './shaders/vertex.glsl'
+import gsap from 'gsap'
 
 /**
  * Base
@@ -13,6 +14,12 @@ const canvas = document.querySelector('canvas.webgl')
 
 // Scene
 const scene = new THREE.Scene()
+
+// Raycaster
+const raycaster = new THREE.Raycaster()
+
+// Mouse
+const mouse = new THREE.Vector2()
 
 /**
  * Sizes
@@ -118,6 +125,7 @@ function init() {
     const material = new THREE.ShaderMaterial({
       uniforms: {
         uImage: { value: 0 },
+        hoverState: { value: 0 },
       },
       fragmentShader,
       vertexShader,
@@ -163,6 +171,37 @@ window.addEventListener('resize', () => {
   // Update renderer
   renderer.setSize(sizes.width, sizes.height)
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+})
+
+/**
+ * Mouse Move
+ */
+window.addEventListener('mousemove', event => {
+  mouse.x = (event.clientX / sizes.width) * 2 - 1
+  mouse.y = -(event.clientY / sizes.height) * 2 + 1
+
+  raycaster.setFromCamera(mouse, camera)
+
+  const intersects = raycaster.intersectObjects(scene.children)
+
+  if (intersects.length > 0) {
+    intersects.forEach(intersect => {
+      gsap.to(intersect.object.material.uniforms.hoverState, {
+        value: 0.5,
+        duration: 1,
+        ease: 'power3.out',
+      })
+    })
+    return
+  }
+
+  imageStore.forEach(image => {
+    gsap.to(image.mesh.material.uniforms.hoverState, {
+      value: 0,
+      duration: 1,
+      ease: 'power3.out',
+    })
+  })
 })
 
 /**

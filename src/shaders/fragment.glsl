@@ -1,7 +1,10 @@
 uniform sampler2D uImage;
+uniform float hoverState;
 
 varying vec2 vUv;
 
 void main()	{
-  gl_FragColor = vec4(texture2D(uImage, vUv));
+  vec4 color = vec4(texture2D(uImage, vUv)) * (1.0 - hoverState);
+
+  gl_FragColor = color;
 }
