@@ -16,6 +16,11 @@ header {
   margin-bottom: 5em;
   position: relative;
 }
+
+header img {
+  opacity: 0;
+}
+
 h1 {
   font-size: 260px;
   line-height: 1;

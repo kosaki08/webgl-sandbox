@@ -192,8 +192,8 @@ window.addEventListener('mousemove', event => {
 
     intersects.forEach(intersect => {
       gsap.to(intersect.object.material.uniforms.hoverState, {
-        value: 0.2,
-        duration: 1,
+        value: 1,
+        duration: 2,
         ease: 'power3.out',
       })
     })
@@ -203,7 +203,7 @@ window.addEventListener('mousemove', event => {
   imageStore.forEach(image => {
     gsap.to(image.mesh.material.uniforms.hoverState, {
       value: 0,
-      duration: 1,
+      duration: 2,
       ease: 'power3.out',
     })
   })
