@@ -27,7 +27,6 @@ const sizes = {
  */
 const scrollObj = {
   currentScroll: 0,
-  previousScroll: 0,
 }
 
 /**
@@ -50,8 +49,9 @@ function fontOpen() {
 }
 
 /**
- * Preload images
+ * Images
  */
+let imageStore = []
 const preloadImages = new Promise((resolve, reject) => {
   imagesLoaded(document.querySelectorAll('img'), { background: true }, resolve)
 })
@@ -82,12 +82,28 @@ renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
 /**
+ * Set Position
+ */
+function setPosition(imageStore) {
+  if (imageStore.length <= 0) {
+    return
+  }
+  imageStore.forEach(image => {
+    image.mesh.position.y =
+      scrollObj.currentScroll - image.top + sizes.height / 2 - image.height / 2
+    image.mesh.position.x = image.left - sizes.width / 2 + image.width / 2
+  })
+}
+
+/**
  * Init
  */
 function init() {
+  window.scrollTo(0, 0)
+
   // Images
   const images = [...document.querySelectorAll('img')]
-  const imageStore = images.map(image => {
+  imageStore = images.map(image => {
     const bounds = image.getBoundingClientRect()
     const geometry = new THREE.PlaneBufferGeometry(
       bounds.width,
@@ -121,12 +137,8 @@ function init() {
     }
   })
 
-  // Set Position
-  imageStore.forEach(image => {
-    image.mesh.position.y =
-      scrollObj.currentScroll - image.top + sizes.height / 2 - image.height / 2
-    image.mesh.position.x = image.left - sizes.width / 2 + image.width / 2
-  })
+  // Position
+  setPosition(imageStore)
 }
 
 /**
@@ -163,6 +175,10 @@ const tick = () => {
 
   // Render
   renderer.render(scene, camera)
+
+  // Position
+  scrollObj.currentScroll = window.scrollY
+  setPosition(imageStore)
 
   // Call tick again on the next frame
   window.requestAnimationFrame(tick)
