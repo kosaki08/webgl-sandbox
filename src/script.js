@@ -124,7 +124,9 @@ function init() {
     // Material
     const material = new THREE.ShaderMaterial({
       uniforms: {
+        uTime: { value: 0 },
         uImage: { value: 0 },
+        hoverPosition: { value: new THREE.Vector2(0.5, 0.5) },
         hoverState: { value: 0 },
       },
       fragmentShader,
@@ -185,9 +187,12 @@ window.addEventListener('mousemove', event => {
   const intersects = raycaster.intersectObjects(scene.children)
 
   if (intersects.length > 0) {
+    intersects[0].object.material.uniforms.hoverPosition.value =
+      intersects[0].uv
+
     intersects.forEach(intersect => {
       gsap.to(intersect.object.material.uniforms.hoverState, {
-        value: 0.5,
+        value: 0.2,
         duration: 1,
         ease: 'power3.out',
       })
@@ -211,6 +216,10 @@ const clock = new THREE.Clock()
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime()
+
+  imageStore.forEach(image => {
+    image.mesh.material.uniforms.uTime.value = elapsedTime
+  })
 
   // Render
   renderer.render(scene, camera)
