@@ -1,10 +1,14 @@
-import './style.css'
 import * as THREE from 'three'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
 import FontFaceObserver from 'fontfaceobserver'
 import imagesLoaded from 'imagesloaded'
+import gsap from 'gsap'
+
+import './style.css'
 import fragmentShader from './shaders/fragment.glsl'
 import vertexShader from './shaders/vertex.glsl'
-import gsap from 'gsap'
 
 /**
  * Base
@@ -34,6 +38,7 @@ const sizes = {
  */
 const scrollObj = {
   currentScroll: 0,
+  previousScroll: 0,
 }
 
 /**
@@ -87,6 +92,49 @@ const renderer = new THREE.WebGLRenderer({
 })
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+/**
+ * Effect Composer
+ */
+const effectComposer = new EffectComposer(renderer)
+
+// Render Pass
+const renderPass = new RenderPass(scene, camera)
+effectComposer.addPass(renderPass)
+
+// Custom Pass
+const distortionShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    scrollSpeed: { value: null },
+  },
+  vertexShader: `
+    varying vec2 vUv;
+
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D tDiffuse;
+    uniform float scrollSpeed;
+    varying vec2 vUv;
+
+    void main(){
+      vec2 newUV = vUv;
+      float area = smoothstep(1.,0.8,vUv.y)*2. - 1.;
+      float area1 = smoothstep(0.4,0.0,vUv.y);
+      area1 = pow(area1,4.);
+      newUV.x -= (vUv.x - 0.5)*0.1*area1*scrollSpeed;
+
+      gl_FragColor = texture2D(tDiffuse, newUV);
+    }
+  `,
+}
+const distortionPass = new ShaderPass(distortionShader)
+distortionPass.renderToScreen = true
+effectComposer.addPass(distortionPass)
 
 /**
  * Set Position
@@ -222,11 +270,16 @@ const tick = () => {
   })
 
   // Render
-  renderer.render(scene, camera)
+  effectComposer.render()
 
   // Position
+  scrollObj.previousScroll = scrollObj.currentScroll
   scrollObj.currentScroll = window.scrollY
+  const delta = Math.abs(scrollObj.currentScroll - scrollObj.previousScroll)
   setPosition(imageStore)
+
+  // Shader pass
+  distortionPass.uniforms.scrollSpeed.value = delta * 0.05
 
   // Call tick again on the next frame
   window.requestAnimationFrame(tick)
