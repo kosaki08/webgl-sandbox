@@ -1,7 +1,5 @@
 import './style.css'
 import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import * as dat from 'dat.gui'
 import FontFaceObserver from 'fontfaceobserver'
 import imagesLoaded from 'imagesloaded'
 import fragmentShader from './shaders/fragment.glsl'
@@ -10,9 +8,6 @@ import vertexShader from './shaders/vertex.glsl'
 /**
  * Base
  */
-// Debug
-const gui = new dat.GUI()
-
 // Canvas
 const canvas = document.querySelector('canvas.webgl')
 
@@ -74,10 +69,6 @@ const camera = new THREE.PerspectiveCamera(
 camera.position.z = 600
 camera.fov = 2 * Math.atan(sizes.height / 2 / 600) * (180 / Math.PI)
 scene.add(camera)
-
-// Controls
-const controls = new OrbitControls(camera, canvas)
-controls.enableDamping = true
 
 /**
  * Renderer
@@ -169,9 +160,6 @@ const clock = new THREE.Clock()
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime()
-
-  // Update controls
-  controls.update()
 
   // Render
   renderer.render(scene, camera)
