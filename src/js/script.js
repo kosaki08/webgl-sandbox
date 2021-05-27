@@ -1,3 +1,6 @@
+import { preloadImages } from './utils'
 import '../css/style.css'
 
-console.log('loaded')
+preloadImages().then(() => {
+  document.body.classList.remove('loading')
+})
