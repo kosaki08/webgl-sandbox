@@ -60,6 +60,7 @@ window.addEventListener('resize', () => {
   // Update renderer
   renderer.setSize(sizes.width, sizes.height)
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  renderer.setClearColor(0xf2f2f2, 0)
 })
 
 /**
@@ -67,12 +68,12 @@ window.addEventListener('resize', () => {
  */
 // Base camera
 const camera = new THREE.PerspectiveCamera(
-  75,
+  45,
   sizes.width / sizes.height,
   0.1,
   100,
 )
-camera.position.set(0.25, -0.25, 1)
+camera.position.z = 50
 scene.add(camera)
 
 /**
