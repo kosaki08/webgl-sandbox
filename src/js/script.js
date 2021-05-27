@@ -13,7 +13,6 @@ preloadImages().then(() => {
 /**
  * Base
  */
-
 // Canvas
 const canvas = document.querySelector('canvas.webgl')
 
@@ -22,6 +21,9 @@ const scene = new THREE.Scene()
 
 // Loader
 const textureLoader = new THREE.TextureLoader()
+
+// Image Store
+const imageStore = []
 
 /**
  * Sizes
@@ -49,7 +51,6 @@ window.addEventListener('resize', () => {
 /**
  * Camera
  */
-// Base camera
 const perspective = 800
 const fov = (180 * (2 * Math.atan(sizes.height / 2 / perspective))) / Math.PI
 const camera = new THREE.PerspectiveCamera(
@@ -75,9 +76,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
  * Init
  */
 function init() {
-  /**
-   * Images
-   */
+  // Images
   const planeGeometry = new THREE.PlaneBufferGeometry(1, 1, 32, 32)
   const planeMaterial = new THREE.ShaderMaterial({
     vertexShader,
@@ -91,9 +90,10 @@ function init() {
 
   const elements = document.querySelectorAll('.js-plane')
 
-  elements.forEach((el, index) => {
-    // Texture
+  elements.forEach(el => {
     const image = el.querySelector('img')
+
+    // Texture
     const imgSrc = image.src
     const texture = textureLoader.load(imgSrc)
     texture.minFilter = THREE.LinearFilter
@@ -120,18 +120,37 @@ function init() {
 
     // Mesh
     const planeMesh = new THREE.Mesh(planeGeometry, imageMaterial)
+
+    // Set mesh position and scale
     planeMesh.position.set(offset.x, offset.y, 0)
     planeMesh.scale.set(sizes.x, sizes.y)
     scene.add(planeMesh)
+
+    imageStore.push({
+      image,
+      mesh: planeMesh,
+    })
   })
 }
+
+/**
+ * Scroll
+ */
+window.addEventListener('scroll', () => {
+  imageStore.forEach(item => {
+    const bounds = item.image.getBoundingClientRect()
+    const mesh = item.mesh
+
+    // Update position
+    mesh.position.x = bounds.left - sizes.width / 2 + bounds.width / 2
+    mesh.position.y = -bounds.top + sizes.height / 2 - bounds.height / 2
+  })
+})
 
 /**
  * Animate
  */
 const clock = new THREE.Clock()
-
-const planes = scene.children.filter(child => child.type === 'Mesh')
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime()
