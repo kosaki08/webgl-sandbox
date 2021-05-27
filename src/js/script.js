@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 
 import { preloadImages } from './utils'
+import vertexShader from './shaders/vertex.glsl'
+import fragmentShader from './shaders/fragment.glsl'
 import '../css/style.css'
 
 preloadImages().then(() => {
@@ -17,16 +19,19 @@ const canvas = document.querySelector('canvas.webgl')
 // Scene
 const scene = new THREE.Scene()
 
-/**
- * Textures
- */
+// Loader
 const textureLoader = new THREE.TextureLoader()
 
 /**
- * Test mesh
+ * Object
  */
-// Geometry
-const geometry = new THREE.PlaneGeometry(1, 1, 32, 32)
+const planeGeometry = new THREE.PlaneGeometry(1, 1, 32, 32)
+const planeMaterial = new THREE.ShaderMaterial({
+  vertexShader,
+  fragmentShader,
+})
+const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial)
+scene.add(planeMesh)
 
 // Material
 const material = new THREE.MeshBasicMaterial()
