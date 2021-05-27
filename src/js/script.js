@@ -1,6 +1,4 @@
 import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import * as dat from 'dat.gui'
 
 import { preloadImages } from './utils'
 import '../css/style.css'
@@ -12,8 +10,6 @@ preloadImages().then(() => {
 /**
  * Base
  */
-// Debug
-const gui = new dat.GUI()
 
 // Canvas
 const canvas = document.querySelector('canvas.webgl')
@@ -74,10 +70,6 @@ const camera = new THREE.PerspectiveCamera(
 camera.position.set(0.25, -0.25, 1)
 scene.add(camera)
 
-// Controls
-const controls = new OrbitControls(camera, canvas)
-controls.enableDamping = true
-
 /**
  * Renderer
  */
@@ -94,9 +86,6 @@ const clock = new THREE.Clock()
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime()
-
-  // Update controls
-  controls.update()
 
   // Render
   renderer.render(scene, camera)
