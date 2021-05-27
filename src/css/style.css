@@ -59,3 +59,125 @@ body {
     transform: scale3d(0.5, 0.5, 1);
   }
 }
+
+a {
+  text-decoration: none;
+  color: var(--color-link);
+  outline: none;
+}
+
+a:hover,
+a:focus {
+  color: var(--color-link-hover);
+  outline: none;
+}
+
+.content {
+  --column-gap: 2rem;
+  --row-gap: 10vh;
+  --mwidth: 400px;
+  --columns: 3;
+
+  display: grid;
+  max-width: calc(
+    var(--mwidth) * var(--columns) / (var(--columns) - 1) * var(--column-gap)
+  );
+  width: 100%;
+  margin: 0 auto;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(calc(var(--mwidth) / 2), var(--mwidth))
+  );
+  grid-column-gap: var(--column-gap);
+  grid-row-gap: var(--row-gap);
+  justify-content: center;
+  padding: 4rem 0 20rem;
+  margin-top: 13rem;
+}
+
+.item {
+  margin: 0;
+  padding: 2rem;
+  align-self: end;
+  display: grid;
+  grid-template-areas:
+    '... ... ...'
+    'pretitle pretitle pretitle'
+    'title title title'
+    '... counter counter'
+    '... description ...';
+  grid-template-columns: 10% 1fr 1rem;
+  grid-template-rows: 3rem auto 1fr 2rem auto;
+}
+
+.item__fig {
+  position: relative;
+  max-width: 100%;
+  grid-area: 1 / 2 / 4 / 3;
+  margin: 0;
+}
+
+.aspect {
+  padding-top: var(--aspect);
+}
+
+.item__img {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: 100%;
+}
+
+.item__pretitle {
+  font-family: vortice-concept, sans-serif;
+  font-weight: 400;
+  color: var(--color-secondary);
+  font-size: 1rem;
+  margin: 0 0 0.75rem;
+  grid-area: pretitle;
+  display: flex;
+  pointer-events: none;
+}
+
+.item__title {
+  font-family: vortice-concept, sans-serif;
+  font-weight: 400;
+  margin: 0;
+  -webkit-text-stroke: 1px var(--color-primary);
+  text-stroke: 1px var(--color-primary);
+  -webkit-text-fill-color: transparent;
+  text-fill-color: transparent;
+  color: transparent;
+  font-size: 2.5rem;
+  grid-area: title;
+  pointer-events: none;
+}
+
+.item__counter {
+  font-family: vortice-concept, sans-serif;
+  font-weight: 400;
+  color: var(--color-primary);
+  font-size: 3rem;
+  grid-area: counter;
+  align-self: end;
+  justify-self: end;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.item__description {
+  max-width: 200px;
+  grid-area: description;
+  font-size: 0.85rem;
+  color: var(--color-description);
+}
+
+.webgl {
+  position: fixed;
+  z-index: -1;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
