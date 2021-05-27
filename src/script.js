@@ -1,288 +1,169 @@
 import * as THREE from 'three'
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
-import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
-import FontFaceObserver from 'fontfaceobserver'
-import imagesLoaded from 'imagesloaded'
-import gsap from 'gsap'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 import './style.css'
-import fragmentShader from './shaders/fragment.glsl'
-import vertexShader from './shaders/vertex.glsl'
 
-/**
- * Base
- */
-// Canvas
-const canvas = document.querySelector('canvas.webgl')
+// = 002 ======================================================================
+// まず最初に、描画結果を確認しやすくするために、マウスで描画結果に干渉できるよ
+// うにしておきましょう。
+// three.js には、カメラを操作するためのコントロールと呼ばれる補助機能が用意され
+// ているので、それを読み込んで利用します。
+// より具体的には、ここでは OrbitControls と名付けられたコントロールを使っていま
+// す。three.js には他のコントロールもありますが、最も直感的な動作をしてくれるの
+// がオービットコントロールだと思います。
+// このサンプルでは、OrbitControls を利用するために index.html にも変更が加えら
+// れていますので、注意しましょう。
+// ============================================================================
+;(() => {
+  window.addEventListener(
+    'DOMContentLoaded',
+    () => {
+      // 初期化処理
+      init()
 
-// Scene
-const scene = new THREE.Scene()
+      // スペースキーが押されている場合はフラグを立てる @@@
+      window.addEventListener(
+        'keydown',
+        event => {
+          switch (event.key) {
+            case 'Escape':
+              run = event.key !== 'Escape'
+              break
+            case ' ':
+              isDown = true
+              break
+            default:
+          }
+        },
+        false,
+      )
+      // キーが離された場合無条件でフラグを下ろす @@@
+      window.addEventListener(
+        'keyup',
+        event => {
+          isDown = false
+        },
+        false,
+      )
 
-// Raycaster
-const raycaster = new THREE.Raycaster()
+      // 描画処理
+      run = true
+      render()
+    },
+    false,
+  )
 
-// Mouse
-const mouse = new THREE.Vector2()
+  // 汎用変数
+  let run = true // レンダリングループフラグ
+  let isDown = false // スペースキーが押されているかどうかのフラグ @@@
 
-/**
- * Sizes
- */
-const sizes = {
-  width: window.innerWidth,
-  height: window.innerHeight,
-}
+  // three.js に関連するオブジェクト用の変数
+  let scene // シーン
+  let camera // カメラ
+  let renderer // レンダラ
+  let geometry // ジオメトリ
+  let material // マテリアル
+  let box // ボックスメッシュ
+  let controls // カメラコントロール
+  let axesHelper // 軸ヘルパーメッシュ
 
-/**
- * Scroll
- */
-const scrollObj = {
-  currentScroll: 0,
-  previousScroll: 0,
-}
-
-/**
- * Fonts
- */
-function fontPlayfair() {
-  return new Promise(resolve => {
-    new FontFaceObserver('Playfair Display').load().then(() => {
-      resolve()
-    })
-  })
-}
-
-function fontOpen() {
-  return new Promise(resolve => {
-    new FontFaceObserver('Open Sans').load().then(() => {
-      resolve()
-    })
-  })
-}
-
-/**
- * Images
- */
-let imageStore = []
-const preloadImages = new Promise((resolve, reject) => {
-  imagesLoaded(document.querySelectorAll('img'), { background: true }, resolve)
-})
-
-/**
- * Camera
- */
-// Base camera
-const camera = new THREE.PerspectiveCamera(
-  70,
-  sizes.width / sizes.height,
-  100,
-  2000,
-)
-camera.position.z = 600
-camera.fov = 2 * Math.atan(sizes.height / 2 / 600) * (180 / Math.PI)
-scene.add(camera)
-
-/**
- * Renderer
- */
-const renderer = new THREE.WebGLRenderer({
-  canvas: canvas,
-  antialias: true,
-  alpha: true,
-})
-renderer.setSize(sizes.width, sizes.height)
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-
-/**
- * Effect Composer
- */
-const effectComposer = new EffectComposer(renderer)
-
-// Render Pass
-const renderPass = new RenderPass(scene, camera)
-effectComposer.addPass(renderPass)
-
-// Custom Pass
-const distortionShader = {
-  uniforms: {
-    tDiffuse: { value: null },
-    scrollSpeed: { value: null },
-  },
-  vertexShader: `
-    varying vec2 vUv;
-
-    void main() {
-      vUv = uv;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-    }
-  `,
-  fragmentShader: `
-    uniform sampler2D tDiffuse;
-    uniform float scrollSpeed;
-    varying vec2 vUv;
-
-    void main(){
-      vec2 newUV = vUv;
-      float area = smoothstep(1.,0.8,vUv.y)*2. - 1.;
-      float area1 = smoothstep(0.4,0.0,vUv.y);
-      area1 = pow(area1,4.);
-      newUV.x -= (vUv.x - 0.5)*0.1*area1*scrollSpeed;
-
-      gl_FragColor = texture2D(tDiffuse, newUV);
-    }
-  `,
-}
-const distortionPass = new ShaderPass(distortionShader)
-distortionPass.renderToScreen = true
-effectComposer.addPass(distortionPass)
-
-/**
- * Set Position
- */
-function setPosition(imageStore) {
-  if (imageStore.length <= 0) {
-    return
+  // カメラに関するパラメータ
+  const CAMERA_PARAM = {
+    fovy: 60,
+    aspect: window.innerWidth / window.innerHeight,
+    near: 0.1,
+    far: 10.0,
+    x: 0.0,
+    y: 2.0,
+    z: 5.0,
+    lookAt: new THREE.Vector3(0.0, 0.0, 0.0),
   }
-  imageStore.forEach(image => {
-    image.mesh.position.y =
-      scrollObj.currentScroll - image.top + sizes.height / 2 - image.height / 2
-    image.mesh.position.x = image.left - sizes.width / 2 + image.width / 2
-  })
-}
+  // レンダラに関するパラメータ
+  const RENDERER_PARAM = {
+    clearColor: 0x666666,
+    width: window.innerWidth,
+    height: window.innerHeight,
+  }
+  // マテリアルに関するパラメータ
+  const MATERIAL_PARAM = {
+    color: 0x3399ff,
+    wireframe: true,
+  }
 
-/**
- * Init
- */
-function init() {
-  window.scrollTo(0, 0)
+  function init() {
+    // シーン
+    scene = new THREE.Scene()
 
-  // Images
-  const images = [...document.querySelectorAll('img')]
-  imageStore = images.map(image => {
-    const bounds = image.getBoundingClientRect()
-    const geometry = new THREE.PlaneBufferGeometry(
-      bounds.width,
-      bounds.height,
-      10,
-      10,
+    // レンダラ
+    renderer = new THREE.WebGLRenderer()
+    renderer.setClearColor(new THREE.Color(RENDERER_PARAM.clearColor))
+    renderer.setSize(RENDERER_PARAM.width, RENDERER_PARAM.height)
+    const wrapper = document.querySelector('#webgl')
+    wrapper.appendChild(renderer.domElement)
+
+    // カメラ
+    camera = new THREE.PerspectiveCamera(
+      CAMERA_PARAM.fovy,
+      CAMERA_PARAM.aspect,
+      CAMERA_PARAM.near,
+      CAMERA_PARAM.far,
     )
-    const texture = new THREE.Texture(image)
-    texture.needsUpdate = true
+    camera.position.set(CAMERA_PARAM.x, CAMERA_PARAM.y, CAMERA_PARAM.z)
+    camera.lookAt(CAMERA_PARAM.lookAt)
 
-    // Material
-    const material = new THREE.ShaderMaterial({
-      uniforms: {
-        uTime: { value: 0 },
-        uImage: { value: 0 },
-        hoverPosition: { value: new THREE.Vector2(0.5, 0.5) },
-        hoverState: { value: 0 },
-      },
-      fragmentShader,
-      vertexShader,
-    })
-    material.uniforms.uImage.value = texture
+    // ジオメトリ、マテリアル、メッシュ生成
+    geometry = new THREE.BoxGeometry(1.0, 1.0, 1.0)
+    var geometry = new THREE.BoxBufferGeometry()
 
-    const mesh = new THREE.Mesh(geometry, material)
-    scene.add(mesh)
+    geometry.vertices = [
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0, 1, 0),
+      new THREE.Vector3(1, 1, 0),
+      new THREE.Vector3(1, 0, 0),
+      new THREE.Vector3(0.5, 0.5, 1),
+    ]
 
-    return {
-      image,
-      mesh: mesh,
-      top: bounds.top,
-      left: bounds.left,
-      width: bounds.width,
-      height: bounds.height,
-    }
-  })
+    geometry.faces = [
+      new THREE.Face3(0, 1, 2),
+      new THREE.Face3(0, 2, 3),
+      new THREE.Face3(1, 0, 4),
+      new THREE.Face3(2, 1, 4),
+      new THREE.Face3(3, 2, 4),
+      new THREE.Face3(0, 3, 4),
+    ]
 
-  // Position
-  setPosition(imageStore)
-}
+    var transformation = new THREE.Matrix4().makeScale(2, 2, 2)
+    geometry.applyMatrix(transformation)
 
-/**
- * Promise All
- */
-Promise.all([fontOpen, fontPlayfair, preloadImages]).then(() => {
-  init()
-})
+    material = new THREE.MeshBasicMaterial(MATERIAL_PARAM)
+    box = new THREE.Mesh(geometry, material)
+    scene.add(box)
 
-/**
- * Resize Event
- */
-window.addEventListener('resize', () => {
-  // Update sizes
-  sizes.width = window.innerWidth
-  sizes.height = window.innerHeight
+    // 軸ヘルパー
+    axesHelper = new THREE.AxesHelper(5.0)
+    scene.add(axesHelper)
 
-  // Update camera
-  camera.aspect = sizes.width / sizes.height
-  camera.updateProjectionMatrix()
-
-  // Update renderer
-  renderer.setSize(sizes.width, sizes.height)
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-})
-
-/**
- * Mouse Move
- */
-window.addEventListener('mousemove', event => {
-  mouse.x = (event.clientX / sizes.width) * 2 - 1
-  mouse.y = -(event.clientY / sizes.height) * 2 + 1
-
-  raycaster.setFromCamera(mouse, camera)
-
-  const intersects = raycaster.intersectObjects(scene.children)
-
-  if (intersects.length > 0) {
-    intersects[0].object.material.uniforms.hoverPosition.value =
-      intersects[0].uv
-
-    intersects.forEach(intersect => {
-      gsap.to(intersect.object.material.uniforms.hoverState, {
-        value: 1,
-        duration: 2,
-        ease: 'power3.out',
-      })
-    })
-    return
+    // コントロール
+    controls = new OrbitControls(camera, renderer.domElement)
   }
 
-  imageStore.forEach(image => {
-    gsap.to(image.mesh.material.uniforms.hoverState, {
-      value: 0,
-      duration: 2,
-      ease: 'power3.out',
-    })
-  })
-})
+  function render() {
+    // 再帰呼び出し
+    if (run === true) {
+      requestAnimationFrame(render)
+    }
 
-/**
- * Animate
- */
-const clock = new THREE.Clock()
+    // コントロールの更新
+    controls.update()
 
-const tick = () => {
-  const elapsedTime = clock.getElapsedTime()
+    // スペースキーが押されたフラグが立っている場合、メッシュを操作する @@@
+    if (isDown === true) {
+      // rotation プロパティは Euler クラスのインスタンス
+      // XYZ の各軸に対する回転をラジアンで指定する
+      box.rotation.y += 0.05
+    }
 
-  imageStore.forEach(image => {
-    image.mesh.material.uniforms.uTime.value = elapsedTime
-  })
-
-  // Render
-  effectComposer.render()
-
-  // Position
-  scrollObj.previousScroll = scrollObj.currentScroll
-  scrollObj.currentScroll = window.scrollY
-  const delta = Math.abs(scrollObj.currentScroll - scrollObj.previousScroll)
-  setPosition(imageStore)
-
-  // Shader pass
-  distortionPass.uniforms.scrollSpeed.value = delta * 0.05
-
-  // Call tick again on the next frame
-  window.requestAnimationFrame(tick)
-}
-
-tick()
+    // 描画
+    renderer.render(scene, camera)
+  }
+})()
