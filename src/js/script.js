@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import glsl from 'glslify'
 
 import { preloadImages } from './utils'
 import vertexShader from './shaders/vertex.glsl'
@@ -93,8 +94,8 @@ function init() {
   // Images
   const planeGeometry = new THREE.PlaneBufferGeometry(1, 1, 32, 32)
   const planeMaterial = new THREE.ShaderMaterial({
-    vertexShader,
-    fragmentShader,
+    vertexShader: glsl(vertexShader),
+    fragmentShader: glsl(fragmentShader),
     uniforms: {
       uTexture: { value: 0 },
       uIndex: { value: 0 },
