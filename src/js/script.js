@@ -98,7 +98,7 @@ function init() {
     fragmentShader: glsl(fragmentShader),
     uniforms: {
       uTexture: { value: 0 },
-      uIndex: { value: 0 },
+      uTime: { value: 0 },
     },
     transparent: true,
   })
@@ -147,6 +147,7 @@ const tick = () => {
   imageStore.forEach(item => {
     const bounds = item.image.getBoundingClientRect()
     updateImagePosition(bounds, item.mesh)
+    item.mesh.material.uniforms.uTime.value = elapsedTime
   })
 
   // Render
