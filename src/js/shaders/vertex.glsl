@@ -1,6 +1,7 @@
 uniform float uTime;
 
 varying vec2 vUv;
+varying float wave;
 
 #pragma glslify: snoise = require(glsl-noise/simplex/3d) 
 
