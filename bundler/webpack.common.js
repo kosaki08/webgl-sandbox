@@ -41,6 +41,18 @@ module.exports = {
         use: [MiniCSSExtractPlugin.loader, 'css-loader'],
       },
 
+      // Scss, Sass
+      {
+        test: /\.s[ac]ss$/i,
+        use: [
+          process.env.NODE_ENV !== 'production'
+            ? 'style-loader'
+            : MiniCssExtractPlugin.loader,
+          'css-loader',
+          'sass-loader',
+        ],
+      },
+
       // Images
       {
         test: /\.(jpg|png|gif|svg)$/,

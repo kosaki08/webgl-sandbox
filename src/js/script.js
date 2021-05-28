@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { preloadImages } from './utils'
 import vertexShader from './shaders/vertex.glsl'
 import fragmentShader from './shaders/fragment.glsl'
-import '../css/style.css'
+import '../scss/styles.scss'
 
 preloadImages().then(() => {
   document.body.classList.remove('loading')
