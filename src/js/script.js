@@ -3,11 +3,13 @@ import * as THREE from 'three'
 import { preloadImages } from './utils'
 import vertexShader from './shaders/vertex.glsl'
 import fragmentShader from './shaders/fragment.glsl'
+import Smooth from './components/smooth'
 import '../scss/styles.scss'
 
 preloadImages().then(() => {
   document.body.classList.remove('loading')
   init()
+  new Smooth()
 })
 
 /**
@@ -134,26 +136,21 @@ function init() {
 }
 
 /**
- * Scroll
- */
-window.addEventListener('scroll', () => {
-  imageStore.forEach(item => {
-    const bounds = item.image.getBoundingClientRect()
-    const mesh = item.mesh
-
-    // Update position
-    mesh.position.x = bounds.left - sizes.width / 2 + bounds.width / 2
-    mesh.position.y = -bounds.top + sizes.height / 2 - bounds.height / 2
-  })
-})
-
-/**
  * Animate
  */
 const clock = new THREE.Clock()
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime()
+
+  // Update image position
+  imageStore.forEach(item => {
+    const bounds = item.image.getBoundingClientRect()
+    const mesh = item.mesh
+
+    mesh.position.x = bounds.left - sizes.width / 2 + bounds.width / 2
+    mesh.position.y = -bounds.top + sizes.height / 2 - bounds.height / 2
+  })
 
   // Render
   renderer.render(scene, camera)
