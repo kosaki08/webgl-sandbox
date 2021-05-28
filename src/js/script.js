@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import glsl from 'glslify'
+import gsap from 'gsap'
 
 import { preloadImages } from './utils'
 import vertexShader from './shaders/vertex.glsl'
@@ -99,6 +100,7 @@ function init() {
     uniforms: {
       uTexture: { value: 0 },
       uTime: { value: 0 },
+      uProgress: { value: 0 },
     },
     transparent: true,
   })
@@ -128,6 +130,22 @@ function init() {
     updateImageSize(bounds, planeMesh)
 
     scene.add(planeMesh)
+
+    // Mouse event
+    el.addEventListener('mouseenter', () => {
+      gsap.to(imageMaterial.uniforms.uProgress, {
+        value: 1,
+        ease: 'power.inOut',
+        // duration: 1,`
+      })
+    })
+    el.addEventListener('mouseleave', () => {
+      gsap.to(imageMaterial.uniforms.uProgress, {
+        value: 0,
+        ease: 'power.inOut',
+        // duration: 1,
+      })
+    })
 
     imageStore.push({
       image,
