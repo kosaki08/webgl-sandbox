@@ -75,6 +75,18 @@ renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
 /**
+ * Image
+ */
+function updateImageSize(bounds, mesh) {
+  mesh.scale.set(bounds.width, bounds.height)
+}
+
+function updateImagePosition(bounds, mesh) {
+  mesh.position.x = bounds.left - sizes.width / 2 + bounds.width / 2
+  mesh.position.y = -bounds.top + sizes.height / 2 - bounds.height / 2
+}
+
+/**
  * Init
  */
 function init() {
@@ -106,26 +118,14 @@ function init() {
     const imageMaterial = planeMaterial.clone()
     imageMaterial.uniforms.uTexture.value = texture
 
-    // Bounds
-    const bounds = image.getBoundingClientRect()
-
-    // Offset
-    const offset = new THREE.Vector2(0)
-    offset.set(
-      bounds.left - window.innerWidth / 2 + bounds.width / 2,
-      -bounds.top + window.innerHeight / 2 - bounds.height / 2,
-    )
-
-    // Sizes
-    const sizes = new THREE.Vector2(0)
-    sizes.set(bounds.width, bounds.height)
-
     // Mesh
     const planeMesh = new THREE.Mesh(planeGeometry, imageMaterial)
 
-    // Set mesh position and scale
-    planeMesh.position.set(offset.x, offset.y, 0)
-    planeMesh.scale.set(sizes.x, sizes.y)
+    // Set image position and size
+    const bounds = image.getBoundingClientRect()
+    updateImagePosition(bounds, planeMesh)
+    updateImageSize(bounds, planeMesh)
+
     scene.add(planeMesh)
 
     imageStore.push({
@@ -143,13 +143,9 @@ const clock = new THREE.Clock()
 const tick = () => {
   const elapsedTime = clock.getElapsedTime()
 
-  // Update image position
   imageStore.forEach(item => {
     const bounds = item.image.getBoundingClientRect()
-    const mesh = item.mesh
-
-    mesh.position.x = bounds.left - sizes.width / 2 + bounds.width / 2
-    mesh.position.y = -bounds.top + sizes.height / 2 - bounds.height / 2
+    updateImagePosition(bounds, item.mesh)
   })
 
   // Render
