@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import glsl from 'glslify'
 import gsap from 'gsap'
 
-import { preloadImages } from './utils'
+import { preloadImages, getRatio } from './utils'
 import vertexShader from './shaders/vertex.glsl'
 import fragmentShader from './shaders/fragment.glsl'
 import Smooth from './components/smooth'
@@ -101,6 +101,8 @@ function init() {
       uTexture: { value: 0 },
       uTime: { value: 0 },
       uProgress: { value: 0 },
+      uAspect: { value: sizes.width / sizes.height },
+      uRatio: { value: 0 },
     },
     transparent: true,
   })
@@ -121,11 +123,17 @@ function init() {
     const imageMaterial = planeMaterial.clone()
     imageMaterial.uniforms.uTexture.value = texture
 
+    // Bounds
+    const bounds = image.getBoundingClientRect()
+    imageMaterial.uniforms.uRatio.value = getRatio(
+      { x: sizes.width, y: sizes.height },
+      { width: bounds.width, height: bounds.height },
+    )
+
     // Mesh
     const planeMesh = new THREE.Mesh(planeGeometry, imageMaterial)
 
     // Set image position and size
-    const bounds = image.getBoundingClientRect()
     updateImagePosition(bounds, planeMesh)
     updateImageSize(bounds, planeMesh)
 
