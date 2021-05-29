@@ -4,6 +4,10 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import '../scss/style.scss'
 
 /**
+ * @see https://codepen.io/_tom_tom_tom/pen/gOmGZpE?editors=0010
+ */
+
+/**
  * Base
  */
 // Canvas
@@ -21,69 +25,75 @@ const textureLoader = new THREE.TextureLoader()
  * Objects
  */
 const params = {
-  count: 500,
-  radius: 50,
-  offset: 8,
-  color1: 0xff7dc3,
-  color2: 0x9eeeff,
+  count: 100,
+  lineWidth: 5,
+  lineColor: 0x83333,
+  mainMaterialColor: 0x770000,
+  mainMaterialSpecular: 0xffffff,
+  areaThreshold: 7,
 }
-const innerGeometry = new THREE.IcosahedronGeometry(7, 2)
-const baseMaterial = new THREE.MeshBasicMaterial({
-  wireframe: true,
-  color: 0x3399ff,
+const speed = {
+  x: [],
+  y: [],
+  z: [],
+}
+const direction = {
+  x: [],
+  y: [],
+  z: [],
+}
+const boxes = []
+const lines = []
+
+// Box Main
+const geometry = new THREE.BoxBufferGeometry(1, 1, 1)
+const material = new THREE.MeshBasicMaterial({
+  color: params.mainMaterialColor,
 })
+const boxMain = new THREE.Mesh(geometry, material)
+scene.add(boxMain)
 
-// Inner geometry
-const innerMesh = new THREE.Mesh(innerGeometry, baseMaterial)
-scene.add(innerMesh)
-
-// Wraper geometry
-const wrapperGeometry = new THREE.BoxBufferGeometry(1, 1, 1, 16, 16, 16)
-const wrapperMesh = new THREE.Mesh(wrapperGeometry, baseMaterial)
-wrapperMesh.scale.set(60, 60, 60)
-scene.add(wrapperMesh)
-
-const geometry = new THREE.BufferGeometry(1, 1, 1)
-const particleMaterial = new THREE.PointsMaterial({
-  size: 0.5,
-  sizeAttenuation: true,
-  depthWrite: false,
-  blending: THREE.AdditiveBlending,
-  vertexColors: true,
-})
-
-const positions = new Float32Array(params.count * 3)
-const colors = new Float32Array(params.count * 3)
-const color1 = new THREE.Color(params.color1)
-const color2 = new THREE.Color(params.color2)
-
+// Boxesを追加
 for (let i = 0; i < params.count; i++) {
-  const i3 = i * 3
+  const box = new THREE.Mesh(geometry, material)
+  box.position.x = Math.random() * 10 - 5
+  box.position.y = Math.random() * 10 - 5
+  box.position.z = Math.random() * 10 - 5
 
-  const randomX = Math.random() * params.radius - params.radius / 2
-  const randomY = Math.random() * params.radius - params.radius / 2
-  const randomZ = Math.random() * params.radius - params.radius / 2
-
-  positions[i3] = randomX
-  positions[i3 + 1] = randomY
-  positions[i3 + 2] = randomZ
-
-  const mixedColor = color1.clone()
-  mixedColor.lerp(color2, Math.random())
-
-  colors[i3] = mixedColor.r
-  colors[i3 + 1] = mixedColor.g
-  colors[i3 + 2] = mixedColor.b
+  const scale = Math.random() * 0.1 + 0.2
+  box.scale.set(scale, scale, scale)
+  boxes.push(box)
+  scene.add(box)
 }
 
-geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+// Linesを追加
+const lineMaterial = new THREE.LineBasicMaterial({
+  linewidth: params.lineWidth,
+  color: params.lineColor,
+  blending: THREE.AdditiveBlending,
+})
+for (let i = 0; i < params.count; i++) {
+  const lineGeometory = new THREE.BufferGeometry().setFromPoints([
+    boxMain.position,
+    boxes[i].position,
+  ])
+  const line = new THREE.Line(lineGeometory, lineMaterial)
+  lines.push(line)
+  scene.add(line)
 
-const particleBoxMesh = new THREE.Points(geometry, particleMaterial)
+  // Speed を指定
+  const speedX = Math.random() * 0.1 - 0.05
+  const speedY = Math.random() * 0.1 - 0.05
+  const speedZ = Math.random() * 0.1 - 0.05
+  speed.x.push(speedX)
+  speed.y.push(speedY)
+  speed.z.push(speedZ)
 
-// particleBoxMesh.position.set()
-
-scene.add(particleBoxMesh)
+  // 方向を指定
+  direction.x.push(1)
+  direction.y.push(1)
+  direction.z.push(1)
+}
 
 /**
  * Sizes
@@ -103,7 +113,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   100,
 )
-camera.position.set(10, 10, -30)
+camera.position.set(5, 0, -10)
 scene.add(camera)
 
 // Controls
@@ -115,10 +125,10 @@ controls.enableDamping = true
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
-  alpha: true,
 })
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+renderer.setClearColor(0x111111)
 
 /**
  * Animate
@@ -128,11 +138,44 @@ const clock = new THREE.Clock()
 const tick = () => {
   const elapsedTime = clock.getElapsedTime()
 
-  innerMesh.rotation.y += 0.01
-  innerMesh.rotation.x += 0.01
+  boxMain.rotation.y += 0.03
+  boxMain.rotation.z += 0.03
 
-  particleBoxMesh.rotation.x += 0.01
-  particleBoxMesh.rotation.y += 0.01
+  // Boxを更新
+  for (let i = 0; i < params.count; i++) {
+    if (
+      boxes[i].position.x > params.areaThreshold ||
+      boxes[i].position.x < params.areaThreshold * -1
+    ) {
+      direction.x[i] *= -1
+    }
+    if (
+      boxes[i].position.y > params.areaThreshold ||
+      boxes[i].position.y < params.areaThreshold * -1
+    ) {
+      direction.y[i] *= -1
+    }
+    if (
+      boxes[i].position.z > params.areaThreshold ||
+      boxes[i].position.z < params.areaThreshold * -1
+    ) {
+      direction.z[i] *= -1
+    }
+    boxes[i].position.x += speed.x[i] * direction.x[i]
+    boxes[i].position.y += speed.y[i] * direction.y[i]
+    boxes[i].position.z += speed.z[i] * direction.z[i]
+
+    // Lineの更新
+    const line = lines[i]
+    const positions = line.geometry.attributes.position.array
+
+    // positions[0-2] には始点の座標が入る
+    positions[3] = boxes[i].position.x
+    positions[4] = boxes[i].position.y
+    positions[5] = boxes[i].position.z
+
+    line.geometry.attributes.position.needsUpdate = true
+  }
 
   // Update controls
   controls.update()
