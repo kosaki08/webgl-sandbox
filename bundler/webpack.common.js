@@ -4,7 +4,7 @@ const MiniCSSExtractPlugin = require('mini-css-extract-plugin')
 const path = require('path')
 
 module.exports = {
-  entry: path.resolve(__dirname, '../src/script.js'),
+  entry: path.resolve(__dirname, '../src/js/script.js'),
   output: {
     filename: 'bundle.[contenthash].js',
     path: path.resolve(__dirname, '../dist'),
@@ -41,6 +41,18 @@ module.exports = {
         use: [MiniCSSExtractPlugin.loader, 'css-loader'],
       },
 
+      // Scss, Sass
+      {
+        test: /\.s[ac]ss$/i,
+        use: [
+          process.env.NODE_ENV !== 'production'
+            ? 'style-loader'
+            : MiniCssExtractPlugin.loader,
+          'css-loader',
+          'sass-loader',
+        ],
+      },
+
       // Images
       {
         test: /\.(jpg|png|gif|svg)$/,
@@ -48,7 +60,9 @@ module.exports = {
           {
             loader: 'file-loader',
             options: {
+              name: '[name].[ext]',
               outputPath: 'assets/images/',
+              esModule: false,
             },
           },
         ],
