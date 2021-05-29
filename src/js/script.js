@@ -1,156 +1,103 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import * as dat from 'dat.gui'
 
 import '../scss/style.scss'
 
-window.addEventListener(
-  'DOMContentLoaded',
-  () => {
-    // 初期化処理
-    init()
+/**
+ * Base
+ */
+// Debug
+const gui = new dat.GUI()
 
-    // スペースキーが押されている場合はフラグを立てる @@@
-    window.addEventListener(
-      'keydown',
-      event => {
-        switch (event.key) {
-          case 'Escape':
-            run = event.key !== 'Escape'
-            break
-          case ' ':
-            isDown = true
-            break
-          default:
-        }
-      },
-      false,
-    )
-    // キーが離された場合無条件でフラグを下ろす @@@
-    window.addEventListener(
-      'keyup',
-      event => {
-        isDown = false
-      },
-      false,
-    )
+// Canvas
+const canvas = document.querySelector('canvas.webgl')
 
-    // 描画処理
-    run = true
-    render()
-  },
-  false,
-)
+// Scene
+const scene = new THREE.Scene()
 
-// 汎用変数
-let run = true // レンダリングループフラグ
-let isDown = false // スペースキーが押されているかどうかのフラグ @@@
+/**
+ * Textures
+ */
+const textureLoader = new THREE.TextureLoader()
 
-// three.js に関連するオブジェクト用の変数
-let scene // シーン
-let camera // カメラ
-let renderer // レンダラ
-let geometry // ジオメトリ
-let material // マテリアル
-let box // ボックスメッシュ
-let controls // カメラコントロール
-let axesHelper // 軸ヘルパーメッシュ
+/**
+ * Test mesh
+ */
+// Geometry
+const geometry = new THREE.PlaneGeometry(1, 1, 32, 32)
 
-// カメラに関するパラメータ
-const CAMERA_PARAM = {
-  fovy: 60,
-  aspect: window.innerWidth / window.innerHeight,
-  near: 0.1,
-  far: 10.0,
-  x: 0.0,
-  y: 2.0,
-  z: 5.0,
-  lookAt: new THREE.Vector3(0.0, 0.0, 0.0),
-}
-// レンダラに関するパラメータ
-const RENDERER_PARAM = {
-  clearColor: 0x666666,
+// Material
+const material = new THREE.MeshBasicMaterial()
+
+// Mesh
+const mesh = new THREE.Mesh(geometry, material)
+scene.add(mesh)
+
+/**
+ * Sizes
+ */
+const sizes = {
   width: window.innerWidth,
   height: window.innerHeight,
 }
-// マテリアルに関するパラメータ
-const MATERIAL_PARAM = {
-  color: 0x3399ff,
-  wireframe: true,
-}
 
-function init() {
-  // シーン
-  scene = new THREE.Scene()
+/**
+ * Camera
+ */
+// Base camera
+const camera = new THREE.PerspectiveCamera(
+  75,
+  sizes.width / sizes.height,
+  0.1,
+  100,
+)
+camera.position.set(0.25, -0.25, 1)
+scene.add(camera)
 
-  // レンダラ
-  renderer = new THREE.WebGLRenderer()
-  renderer.setClearColor(new THREE.Color(RENDERER_PARAM.clearColor))
-  renderer.setSize(RENDERER_PARAM.width, RENDERER_PARAM.height)
-  const wrapper = document.querySelector('#webgl')
-  wrapper.appendChild(renderer.domElement)
+// Controls
+const controls = new OrbitControls(camera, canvas)
+controls.enableDamping = true
 
-  // カメラ
-  camera = new THREE.PerspectiveCamera(
-    CAMERA_PARAM.fovy,
-    CAMERA_PARAM.aspect,
-    CAMERA_PARAM.near,
-    CAMERA_PARAM.far,
-  )
-  camera.position.set(CAMERA_PARAM.x, CAMERA_PARAM.y, CAMERA_PARAM.z)
-  camera.lookAt(CAMERA_PARAM.lookAt)
+/**
+ * Renderer
+ */
+const renderer = new THREE.WebGLRenderer({
+  canvas: canvas,
+})
+renderer.setSize(sizes.width, sizes.height)
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
-  // ジオメトリ、マテリアル、メッシュ生成
-  geometry = new THREE.BoxGeometry(1.0, 1.0, 1.0)
-  var geometry = new THREE.BoxBufferGeometry()
+/**
+ * Animate
+ */
+const clock = new THREE.Clock()
 
-  geometry.vertices = [
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(0, 1, 0),
-    new THREE.Vector3(1, 1, 0),
-    new THREE.Vector3(1, 0, 0),
-    new THREE.Vector3(0.5, 0.5, 1),
-  ]
+const tick = () => {
+  const elapsedTime = clock.getElapsedTime()
 
-  geometry.faces = [
-    new THREE.Face3(0, 1, 2),
-    new THREE.Face3(0, 2, 3),
-    new THREE.Face3(1, 0, 4),
-    new THREE.Face3(2, 1, 4),
-    new THREE.Face3(3, 2, 4),
-    new THREE.Face3(0, 3, 4),
-  ]
-
-  var transformation = new THREE.Matrix4().makeScale(2, 2, 2)
-  geometry.applyMatrix4(transformation)
-
-  material = new THREE.MeshBasicMaterial(MATERIAL_PARAM)
-  box = new THREE.Mesh(geometry, material)
-  scene.add(box)
-
-  // 軸ヘルパー
-  axesHelper = new THREE.AxesHelper(5.0)
-  scene.add(axesHelper)
-
-  // コントロール
-  controls = new OrbitControls(camera, renderer.domElement)
-}
-
-function render() {
-  // 再帰呼び出し
-  if (run === true) {
-    requestAnimationFrame(render)
-  }
-
-  // コントロールの更新
+  // Update controls
   controls.update()
 
-  // スペースキーが押されたフラグが立っている場合、メッシュを操作する @@@
-  if (isDown === true) {
-    // rotation プロパティは Euler クラスのインスタンス
-    // XYZ の各軸に対する回転をラジアンで指定する
-    box.rotation.y += 0.05
-  }
-
-  // 描画
+  // Render
   renderer.render(scene, camera)
+
+  // Call tick again on the next frame
+  window.requestAnimationFrame(tick)
 }
+
+window.addEventListener('resize', () => {
+  // Update sizes
+  sizes.width = window.innerWidth
+  sizes.height = window.innerHeight
+
+  // Update camera
+  camera.aspect = sizes.width / sizes.height
+  camera.updateProjectionMatrix()
+
+  // Update renderer
+  renderer.setSize(sizes.width, sizes.height)
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+})
+
+tick()
