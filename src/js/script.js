@@ -1,15 +1,11 @@
 import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import * as dat from 'dat.gui'
+import gsap from 'gsap'
 
 import '../scss/style.scss'
 
 /**
  * Base
  */
-// Debug
-const gui = new dat.GUI()
-
 // Canvas
 const canvas = document.querySelector('canvas.webgl')
 
@@ -22,17 +18,38 @@ const scene = new THREE.Scene()
 const textureLoader = new THREE.TextureLoader()
 
 /**
- * Test mesh
+ * Box
  */
-// Geometry
-const geometry = new THREE.PlaneGeometry(1, 1, 32, 32)
+let boxItems = []
+const step = 1
+const num = 5
 
-// Material
-const material = new THREE.MeshBasicMaterial()
+const geometry = new THREE.BoxBufferGeometry(1, 1, 1, 2, 2)
+const material = new THREE.MeshBasicMaterial({
+  wireframe: true,
+})
+const baseMesh = new THREE.Mesh(geometry, material)
 
-// Mesh
-const mesh = new THREE.Mesh(geometry, material)
-scene.add(mesh)
+for (let x = 0; x <= num; x++) {
+  for (let y = 0; y <= num; y++) {
+    for (let z = 0; z <= num; z++) {
+      const box = baseMesh.clone()
+      box.position.set(
+        (x - num / 2) * step,
+        (y - num / 2) * step,
+        (z - num / 2) * step,
+      )
+      boxItems.push(box)
+      scene.add(box)
+    }
+  }
+}
+
+const boxPositions = boxItems.map(box => ({
+  x: box.position.x,
+  y: box.position.y,
+  z: box.position.z,
+}))
 
 /**
  * Sizes
@@ -47,17 +64,14 @@ const sizes = {
  */
 // Base camera
 const camera = new THREE.PerspectiveCamera(
-  75,
+  60,
   sizes.width / sizes.height,
   0.1,
   100,
 )
-camera.position.set(0.25, -0.25, 1)
+camera.position.set(2.5, 2.5, 10)
+camera.lookAt(new THREE.Vector3(0, 0, 0))
 scene.add(camera)
-
-// Controls
-const controls = new OrbitControls(camera, canvas)
-controls.enableDamping = true
 
 /**
  * Renderer
@@ -67,6 +81,7 @@ const renderer = new THREE.WebGLRenderer({
 })
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+renderer.setClearColor(0x666666)
 
 /**
  * Animate
@@ -76,8 +91,13 @@ const clock = new THREE.Clock()
 const tick = () => {
   const elapsedTime = clock.getElapsedTime()
 
-  // Update controls
-  controls.update()
+  // Cameraの位置を制御
+  camera.position.x = Math.sin(elapsedTime / 10) * 2.5
+  camera.position.y = Math.cos(elapsedTime / 10) * 10
+  camera.position.z = Math.cos(elapsedTime / 10) * 2.5
+
+  // カメラを中心に向ける
+  camera.lookAt(new THREE.Vector3(0))
 
   // Render
   renderer.render(scene, camera)
@@ -86,6 +106,35 @@ const tick = () => {
   window.requestAnimationFrame(tick)
 }
 
+// spaceキーが押された場合の処理
+window.addEventListener('keydown', e => {
+  if (e.code === 'Space') {
+    boxItems.forEach((box, i) => {
+      gsap.to(box.position, {
+        x: boxPositions[i].x * 2,
+        y: boxPositions[i].y * 2,
+        z: boxPositions[i].z * 2,
+        duration: 0.3,
+        ease: 'power4.easeInOut',
+      })
+    })
+  }
+})
+
+// spaceキーが離された場合の処理
+window.addEventListener('keyup', () => {
+  boxItems.forEach((box, i) => {
+    gsap.to(box.position, {
+      x: boxPositions[i].x,
+      y: boxPositions[i].y,
+      z: boxPositions[i].z,
+      duration: 0.3,
+      ease: 'power4.easeInOut',
+    })
+  })
+})
+
+// リサイズ時の処理
 window.addEventListener('resize', () => {
   // Update sizes
   sizes.width = window.innerWidth
